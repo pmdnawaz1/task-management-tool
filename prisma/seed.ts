@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -13,14 +14,15 @@ async function main() {
     const existingAdmin = await prisma.user.findUnique({
       where: { email: 'pmdnawaz1@gmail.com' }
     });
-
+    const hashedPasswordAdmin = await bcrypt.hash(`${process.env.ADMIN_PASSWORD}`, 10);
+    
     let admin;
     if (!existingAdmin) {
       admin = await prisma.user.create({
         data: {
           email: 'pmdnawaz1@gmail.com',
           name: 'Admin User',
-          password: 'Qwert1@', // In production, hash this
+          password:  hashedPasswordAdmin,
           role: 'ADMIN',
         },
       });
@@ -37,11 +39,12 @@ async function main() {
 
     let user;
     if (!existingUser) {
+      const hashedPassword = await bcrypt.hash(`${process.env.USER_PASSWORD}`, 10);
       user = await prisma.user.create({
         data: {
           email: 'pmdnawaz123@gmail.com',
           name: 'Normal User',
-          password: 'Asdfg1@', // In production, hash this
+          password: hashedPassword,
           role: 'USER',
           invitedById: admin.id,
         },
@@ -102,8 +105,6 @@ async function main() {
 
     console.log('');
     console.log('✅ Database seeded successfully!');
-    console.log('👤 Admin: pmdnawaz1@gmail.com / Qwert1@');
-    console.log('👤 User: pmdnawaz123@gmail.com / Asdfg1@');
     console.log('');
     console.log('🔍 Database contents:');
     

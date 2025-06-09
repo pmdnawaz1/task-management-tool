@@ -74,6 +74,7 @@ model User {
   mentions      Mention[]
   invitedBy     User?     @relation("UserInvitations", fields: [invitedById], references: [id])
   invitedUsers  User[]    @relation("UserInvitations")
+  otps          OTP[]
 
   @@index([resetToken])
   @@index([resetTokenExpiry])
@@ -104,9 +105,10 @@ model Comment {
   authorId  String
   taskId    String
 
-  author   User      @relation(fields: [authorId], references: [id])
-  task     Task      @relation(fields: [taskId], references: [id])
-  mentions Mention[]
+  author      User               @relation(fields: [authorId], references: [id])
+  task        Task               @relation(fields: [taskId], references: [id])
+  mentions    Mention[]
+  attachments CommentAttachment[]
 }
 
 model Mention {
@@ -131,10 +133,43 @@ model Attachment {
   task Task @relation(fields: [taskId], references: [id])
 }
 
+model CommentAttachment {
+  id        String   @id @default(cuid())
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  commentId String
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id])
+}
+
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum OTPType {
+  PROFILE_UPDATE
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  userId    String
+  otp       String
+  type      OTPType
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([otp])
+  @@index([expiresAt])
 }
