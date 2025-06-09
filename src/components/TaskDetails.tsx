@@ -167,7 +167,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
         taskId,
         attachments: uploadedAttachments,
       });
-    } catch (error) {
+    } catch {
       // Error uploading attachments
     } finally {
       setIsUploading(false);
@@ -244,11 +244,11 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: theme.text.secondary }}>Assigned To</h3>
-            <p style={{ color: theme.text.primary }}>{task.assignedTo.name ?? task.assignedTo.email}</p>
+            <p style={{ color: theme.text.primary }}>{task.assignedTo.name ?? task.assignedTo.email ?? 'Unknown User'}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: theme.text.secondary }}>Created By</h3>
-            <p style={{ color: theme.text.primary }}>{task.createdBy.name ?? task.createdBy.email}</p>
+            <p style={{ color: theme.text.primary }}>{task.createdBy.name ?? task.createdBy.email ?? 'Unknown User'}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: theme.text.secondary }}>Priority</h3>
@@ -383,7 +383,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
               <div key={comment.id} className="rounded-lg p-4" style={{ backgroundColor: theme.bg.tertiary }}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="font-medium" style={{ color: theme.text.primary }}>{comment.author.name ?? comment.author.email}</p>
+                    <p className="font-medium" style={{ color: theme.text.primary }}>{comment.author.name ?? comment.author.email ?? 'Unknown User'}</p>
                     <p className="text-sm" style={{ color: theme.text.secondary }}>
                       {new Date(comment.createdAt).toLocaleString()}
                     </p>
@@ -458,11 +458,11 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
                 ).map(user => (
                   <button
                     key={user.id}
-                    onClick={() => handleMentionSelect({ id: user.id, name: user.name ?? '' })}
+                    onClick={() => handleMentionSelect({ id: user.id, name: user.name ?? user.email ?? `User ${user.id}` })}
                     className="w-full px-4 py-2 text-left hover:opacity-80"
                     style={{ color: theme.text.primary }}
                   >
-                    {user.name ?? user.email}
+                    {user.name ?? user.email ?? `User ${user.id}`}
                   </button>
                 ))}
               </div>

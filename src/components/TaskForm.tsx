@@ -12,6 +12,7 @@ const taskSchema = z.object({
   description: z.string().optional(),
   deadline: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  status: z.enum(['OPEN', 'IN_PROGRESS', 'REVIEW', 'DONE']).optional(),
   tags: z.string().optional(),
   assignedToId: z.string().min(1, 'Assignee is required'),
   dod: z.string().optional(),
@@ -115,7 +116,7 @@ export default function TaskForm({ onSuccess, initialData, taskId }: TaskFormPro
       reset();
       setAttachments([]);
       onSuccess?.();
-    } catch (error) {
+    } catch {
       // Error saving task
     } finally {
       setIsSubmitting(false);

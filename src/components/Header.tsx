@@ -49,6 +49,7 @@ export const Header = () => {
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:opacity-80"
                   style={{ backgroundColor: theme.bg.tertiary }}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={session.user?.image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user?.name ?? '')}&background=random`}
                     alt="Profile"

@@ -30,6 +30,11 @@ export const tasksRouter = createTRPCRouter({
           include: {
             author: true,
             attachments: true,
+            mentions: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },
@@ -52,6 +57,11 @@ export const tasksRouter = createTRPCRouter({
             include: {
               author: true,
               attachments: true,
+              mentions: {
+                include: {
+                  user: true,
+                },
+              },
             },
             orderBy: {
               createdAt: 'desc',
@@ -101,11 +111,13 @@ export const tasksRouter = createTRPCRouter({
       }
 
       // Send email notification to assigned user
-      await sendEmail({
-        to: task.assignedTo.email,
-        subject: `New Task Assigned: ${task.title}`,
-        text: `You have been assigned a new task: ${task.title}\n\nDescription: ${task.description ?? 'No description'}\nPriority: ${task.priority}\nDeadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}`,
-      });
+      if (task.assignedTo.email) {
+        await sendEmail({
+          to: task.assignedTo.email,
+          subject: `New Task Assigned: ${task.title}`,
+          text: `You have been assigned a new task: ${task.title}\n\nDescription: ${task.description ?? 'No description'}\nPriority: ${task.priority}\nDeadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}`,
+        });
+      }
 
       return task;
     }),
@@ -163,6 +175,11 @@ export const tasksRouter = createTRPCRouter({
             include: {
               author: true,
               attachments: true,
+              mentions: {
+                include: {
+                  user: true,
+                },
+              },
             },
           },
         }
@@ -171,8 +188,9 @@ export const tasksRouter = createTRPCRouter({
       // Send email notification if assignee was changed
       if (updateData.assignedToId && updateData.assignedToId !== task.assignedToId) {
         try {
-          await sendEmail({
-            to: updatedTask.assignedTo.email,
+          if (updatedTask.assignedTo.email) {
+            await sendEmail({
+              to: updatedTask.assignedTo.email,
             subject: `Task Reassigned: ${updatedTask.title}`,
             text: `You have been assigned to task "${updatedTask.title}" by ${ctx.session.user.name}.`,
             html: `
@@ -182,7 +200,8 @@ export const tasksRouter = createTRPCRouter({
               <p><strong>Priority:</strong> ${updatedTask.priority}</p>
               <p><strong>Deadline:</strong> ${updatedTask.deadline ? new Date(updatedTask.deadline).toLocaleDateString() : 'No deadline'}</p>
             `
-          });
+            });
+          }
         } catch (emailError) {
           console.error('Failed to send assignment email:', emailError);
         }
@@ -241,7 +260,7 @@ export const tasksRouter = createTRPCRouter({
       });
 
       // Send email notification to task creator
-      if (task.createdById !== ctx.session.user.id) {
+      if (task.createdById !== ctx.session.user.id && task.createdBy.email) {
         await sendEmail({
           to: task.createdBy.email,
           subject: `Task Status Updated: ${task.title}`,
@@ -328,7 +347,7 @@ export const tasksRouter = createTRPCRouter({
                 subject: `You were mentioned in a task comment`,
                 text: `${author.name} mentioned you in a comment on task "${task.title}":\n\n${input.content}`,
               });
-            } catch (emailError) {
+            } catch {
               // Continue with other emails even if one fails
             }
           }
@@ -342,15 +361,15 @@ export const tasksRouter = createTRPCRouter({
         for (const user of notifyUsers) {
           try {
             await sendEmail({
-              to: user.email,
+              to: user.email!,
               subject: `New comment on task: ${task.title}`,
               text: `${author.name} commented on task "${task.title}":\n\n${input.content}`,
             });
-          } catch (emailError) {
+          } catch {
             // Continue with other emails even if one fails
           }
         }
-      } catch (error) {
+      } catch {
         // Don't throw the error - we still want to return the comment
       }
 

@@ -25,7 +25,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null) as { error?: string } | null;
+      await response.json().catch(() => null) as { error?: string } | null;
       throw new Error(`Failed to send email: ${response.statusText}`);
     }
 

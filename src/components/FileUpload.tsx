@@ -42,7 +42,7 @@ export default function FileUpload({ taskId, attachments, onUploadSuccess }: Fil
         setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
         
         onUploadSuccess?.();
-      } catch (error) {
+      } catch {
         setUploadProgress(prev => {
           const newProgress = { ...prev };
           delete newProgress[file.name];

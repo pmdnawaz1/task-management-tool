@@ -69,7 +69,7 @@ export default function ProfilePage() {
       
       // Redirect back to dashboard after a short delay
       setTimeout(() => {
-        router.push('/dashboard');
+        void router.push('/dashboard');
       }, 2000);
     },
     onError: (error) => {
@@ -99,7 +99,7 @@ export default function ProfilePage() {
         
         const result = await response.json() as { url: string };
         setImage(result.url);
-      } catch (error) {
+      } catch {
         setError('Failed to upload image');
         setPreviewUrl(null);
       }
@@ -122,7 +122,7 @@ export default function ProfilePage() {
   };
 
   const handleBack = () => {
-    router.push('/dashboard');
+    void router.push('/dashboard');
   };
 
   if (isSuccess) {
@@ -187,6 +187,7 @@ export default function ProfilePage() {
               </label>
               <div className="flex items-center space-x-6">
                 <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewUrl ?? image ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`}
                     alt="Profile Preview"

@@ -14,12 +14,12 @@ interface TaskCardTask {
   assignedTo: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
   };
   createdBy: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
   };
   comments: Array<{
     id: string;
@@ -28,13 +28,13 @@ interface TaskCardTask {
     author: {
       id: string;
       name: string | null;
-      email: string;
+      email: string | null;
     };
     mentions: Array<{
       user: {
         id: string;
         name: string | null;
-        email: string;
+        email: string | null;
       };
     }>;
   }>;
@@ -140,11 +140,11 @@ export default function TaskCard({ task, onClick, onEdit }: TaskCardProps) {
       <div className="space-y-2 mb-3">
         <div className="flex items-center text-sm" style={{ color: theme.text.secondary }}>
           <User className="w-4 h-4 mr-1" style={{ color: theme.text.secondary }} />
-          <span>Assigned to: {task.assignedTo.name ?? task.assignedTo.email}</span>
+          <span>Assigned to: {task.assignedTo.name ?? task.assignedTo.email ?? 'Unknown User'}</span>
         </div>
         <div className="flex items-center text-sm" style={{ color: theme.text.secondary }}>
           <User className="w-4 h-4 mr-1" style={{ color: theme.text.secondary }} />
-          <span>Created by: {task.createdBy.name ?? task.createdBy.email}</span>
+          <span>Created by: {task.createdBy.name ?? task.createdBy.email ?? 'Unknown User'}</span>
         </div>
       </div>
 

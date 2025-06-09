@@ -116,7 +116,7 @@ export const authRouter = createTRPCRouter({
 
         
         // Create user in Supabase Auth
-        const { data: supabaseUser, error } = await supabaseAdmin.auth.admin.createUser({
+        const { error } = await supabaseAdmin.auth.admin.createUser({
           email: input.email,
           password: tempPassword,
           email_confirm: true,
@@ -137,7 +137,7 @@ export const authRouter = createTRPCRouter({
                 await supabaseAdmin.auth.admin.deleteUser(existingSupabaseUser.id);
                 
                 // Now try to create the user again
-                const { data: retryUser, error: retryError } = await supabaseAdmin.auth.admin.createUser({
+                const { error: retryError } = await supabaseAdmin.auth.admin.createUser({
                   email: input.email,
                   password: tempPassword,
                   email_confirm: true,
@@ -188,7 +188,7 @@ export const authRouter = createTRPCRouter({
               <p>This link will expire in 24 hours.</p>
             `,
           });
-        } catch (emailError) {
+        } catch {
           // Don't throw the error - we still want to return the user
         }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { useSession } from 'next-auth/react';
@@ -22,12 +22,12 @@ interface Task {
   assignedTo: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
   };
   createdBy: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
   };
   comments: Array<{
     id: string;
@@ -36,7 +36,7 @@ interface Task {
     author: {
       id: string;
       name: string | null;
-      email: string;
+      email: string | null;
     };
   }>;
   attachments: Array<{
@@ -65,7 +65,7 @@ export default function Board() {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
-  const { data: tasks, refetch: refetchTasks } = api.tasks.getAll.useQuery();
+  const { data: tasks } = api.tasks.getAll.useQuery();
   const utils = api.useUtils();
   
   const updateStatus = api.tasks.updateStatus.useMutation({
@@ -150,13 +150,20 @@ export default function Board() {
     }
   };
 
-  const tasksByStatus = tasks?.reduce((acc, task) => {
+  const tasksByStatus: Record<keyof typeof statusColumns, Task[]> = tasks?.reduce((acc, task) => {
     if (!acc[task.status]) {
       acc[task.status] = [];
     }
     acc[task.status].push(task);
     return acc;
-  }, {} as Record<keyof typeof statusColumns, Task[]>) ?? {};
+  }, {} as Record<keyof typeof statusColumns, Task[]>) ?? {} as Record<keyof typeof statusColumns, Task[]>;
+
+  // Ensure all status columns exist
+  (Object.keys(statusColumns) as Array<keyof typeof statusColumns>).forEach(status => {
+    if (!tasksByStatus[status]) {
+      tasksByStatus[status] = [];
+    }
+  });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg.primary }}>
@@ -216,13 +223,13 @@ export default function Board() {
                   />
                 </div>
                 <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
-                  {tasksByStatus[status]?.length ?? 0} tasks
+                  {tasksByStatus[status].length} tasks
                 </p>
               </div>
 
               {/* Tasks */}
               <div className="p-4 space-y-3 min-h-[500px]">
-                {tasksByStatus[status]?.map((task) => (
+                {tasksByStatus[status].map((task: Task) => (
                   <div
                     key={task.id}
                     draggable
@@ -262,7 +269,7 @@ export default function Board() {
 
                     {/* Task Meta */}
                     <div className="flex justify-between items-center text-xs" style={{ color: theme.text.secondary }}>
-                      <span>{task.assignedTo.name ?? task.assignedTo.email}</span>
+                      <span>{task.assignedTo.name ?? task.assignedTo.email ?? 'Unknown'}</span>
                       <div className="flex items-center space-x-2">
                         {task.comments && task.comments.length > 0 && (
                           <span>{task.comments.length} 💬</span>
@@ -287,7 +294,7 @@ export default function Board() {
                     {/* Tags */}
                     {task.tags && task.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {task.tags.slice(0, 2).map((tag, index) => (
+                        {task.tags.slice(0, 2).map((tag: string, index: number) => (
                           <span
                             key={index}
                             className="px-2 py-1 rounded text-xs"

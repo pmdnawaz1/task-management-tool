@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
             where: { email: credentials.email }
           });
 
-          if (!user || !user.password) {
+          if (!user?.password) {
             return null;
           }
 
@@ -85,7 +85,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
             image: user.image,
           };
-        } catch (error) {
+        } catch {
           return null;
         }
       },

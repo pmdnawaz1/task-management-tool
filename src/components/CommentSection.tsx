@@ -12,13 +12,13 @@ interface Comment {
   author: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
   };
   mentions: Array<{
     user: {
       id: string;
       name: string | null;
-      email: string;
+      email: string | null;
     };
   }>;
   attachments?: Array<{
@@ -105,7 +105,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
 
       reset();
       setAttachments([]);
-    } catch (error) {
+    } catch {
       // Error creating comment
     } finally {
       setIsUploading(false);
@@ -135,7 +135,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
         await deleteComment.mutateAsync({ id: commentId });
-      } catch (error) {
+      } catch {
         // Error deleting comment
       }
     }
@@ -188,7 +188,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
                 <button
                   key={user.id}
                   type="button"
-                  onClick={() => insertMention(user.name ?? user.email)}
+                  onClick={() => insertMention(user.name ?? user.email ?? `User ${user.id}`)}
                   style={{ 
                     color: theme.text.primary,
                     backgroundColor: 'transparent'
@@ -201,7 +201,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  {user.name ?? user.email} ({user.email})
+                  {user.name ?? user.email ?? `User ${user.id}`} {user.email ? `(${user.email})` : ''}
                 </button>
               ))}
             </div>
@@ -222,7 +222,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
             disabled={!commentContent.trim() || isUploading}
             style={{ 
               backgroundColor: theme.accent.primary,
-              color: theme.text.onAccent || '#ffffff'
+              color: theme.text.onAccent ?? '#ffffff'
             }}
             className="flex items-center px-4 py-2 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 disabled:opacity-50"
           >
@@ -242,7 +242,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center space-x-2">
                 <span style={{ color: theme.text.primary }} className="font-medium">
-                  {comment.author.name ?? comment.author.email}
+                  {comment.author.name ?? comment.author.email ?? 'Unknown User'}
                 </span>
                 <span style={{ color: theme.text.secondary }} className="text-sm">
                   {format(new Date(comment.createdAt), 'MMM d, yyyy HH:mm')}
@@ -254,7 +254,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
                   style={{ color: theme.text.secondary }}
                   className="p-1 hover:opacity-80"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = theme.accent.error || '#ef4444';
+                    e.currentTarget.style.color = theme.accent.error ?? '#ef4444';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = theme.text.secondary;
@@ -273,7 +273,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
               <div className="mt-2 flex items-center space-x-2">
                 <AtSign style={{ color: theme.text.secondary }} className="w-4 h-4" />
                 <span style={{ color: theme.text.secondary }} className="text-sm">
-                  Mentioned: {comment.mentions.map(m => m.user.name ?? m.user.email).join(', ')}
+                  Mentioned: {comment.mentions.map(m => m.user.name ?? m.user.email ?? `User ${m.user.id}`).join(', ')}
                 </span>
               </div>
             )}
