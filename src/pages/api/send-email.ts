@@ -20,7 +20,12 @@ export default async function handler(
   }
 
   try {
-    const { to, subject, text, html } = req.body;
+    const { to, subject, text, html } = req.body as {
+      to: string;
+      subject: string;
+      text: string;
+      html?: string;
+    };
     console.log('Sending email to:', to);
     console.log('SMTP Config:', {
       host: process.env.SMTP_HOST,
@@ -35,7 +40,7 @@ export default async function handler(
       to,
       subject,
       text,
-      html: html || `<p>${text}</p>`,
+      html: html ?? `<p>${text}</p>`,
     };
 
     const info = await transporter.sendMail(mailOptions);

@@ -9,6 +9,12 @@ const taskSchema = z.object({
   deadline: z.date().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   assignedToId: z.string(),
+  attachments: z.array(z.object({
+    fileName: z.string(),
+    fileUrl: z.string(),
+    fileSize: z.number(),
+    mimeType: z.string(),
+  })).optional(),
 });
 
 export const tasksRouter = createTRPCRouter({
@@ -17,9 +23,11 @@ export const tasksRouter = createTRPCRouter({
       include: {
         assignedTo: true,
         createdBy: true,
+        attachments: true,
         comments: {
           include: {
             author: true,
+            attachments: true,
           },
         },
       },
@@ -37,9 +45,11 @@ export const tasksRouter = createTRPCRouter({
         include: {
           assignedTo: true,
           createdBy: true,
+          attachments: true,
           comments: {
             include: {
               author: true,
+              attachments: true,
             },
             orderBy: {
               createdAt: 'desc',
@@ -61,22 +71,38 @@ export const tasksRouter = createTRPCRouter({
   create: protectedProcedure
     .input(taskSchema)
     .mutation(async ({ ctx, input }) => {
+      const { attachments, ...taskData } = input;
+      
       const task = await ctx.db.task.create({
         data: {
-          ...input,
+          ...taskData,
           createdById: ctx.session.user.id,
         },
         include: {
           assignedTo: true,
           createdBy: true,
+          attachments: true,
         },
       });
+
+      // Create attachments if provided
+      if (attachments && attachments.length > 0) {
+        await ctx.db.attachment.createMany({
+          data: attachments.map(attachment => ({
+            taskId: task.id,
+            fileName: attachment.fileName,
+            fileUrl: attachment.fileUrl,
+            fileSize: attachment.fileSize,
+            mimeType: attachment.mimeType,
+          }))
+        });
+      }
 
       // Send email notification to assigned user
       await sendEmail({
         to: task.assignedTo.email,
         subject: `New Task Assigned: ${task.title}`,
-        text: `You have been assigned a new task: ${task.title}\n\nDescription: ${task.description || 'No description'}\nPriority: ${task.priority}\nDeadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}`,
+        text: `You have been assigned a new task: ${task.title}\n\nDescription: ${task.description ?? 'No description'}\nPriority: ${task.priority}\nDeadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}`,
       });
 
       return task;
@@ -281,5 +307,58 @@ export const tasksRouter = createTRPCRouter({
       }
 
       return comment;
+    }),
+
+  addAttachment: protectedProcedure
+    .input(z.object({
+      taskId: z.string(),
+      attachments: z.array(z.object({
+        fileName: z.string(),
+        fileUrl: z.string(),
+        fileSize: z.number(),
+        mimeType: z.string(),
+      })),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify task exists and user has access
+      const task = await ctx.db.task.findUnique({
+        where: { id: input.taskId },
+        include: {
+          assignedTo: true,
+          createdBy: true,
+        },
+      });
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        });
+      }
+
+      // Check if user has permission to add attachments
+      const isAdmin = ctx.session.user.role === 'ADMIN';
+      const isAssignedUser = task.assignedToId === ctx.session.user.id;
+      const isCreator = task.createdById === ctx.session.user.id;
+
+      if (!isAdmin && !isAssignedUser && !isCreator) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins, assigned users, and task creators can add attachments',
+        });
+      }
+
+      // Create attachments
+      await ctx.db.attachment.createMany({
+        data: input.attachments.map(attachment => ({
+          taskId: input.taskId,
+          fileName: attachment.fileName,
+          fileUrl: attachment.fileUrl,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+        }))
+      });
+
+      return { success: true };
     }),
 });

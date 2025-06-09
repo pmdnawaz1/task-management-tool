@@ -11,7 +11,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
 
   try {
     // Get the base URL based on the environment
-    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 
+    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL ?? 
       (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
     
     const response = await fetch(`${baseUrl}/api/send-email`, {
@@ -28,7 +28,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      const errorData = await response.json().catch(() => null) as { error?: string } | null;
       console.error('Email API error:', {
         status: response.status,
         statusText: response.statusText,
@@ -37,7 +37,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
       throw new Error(`Failed to send email: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; messageId: string };
     console.log('Email sent successfully:', result);
     return result;
   } catch (error) {
