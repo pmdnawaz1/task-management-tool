@@ -106,7 +106,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
       reset();
       setAttachments([]);
     } catch (error) {
-      console.error('Error creating comment:', error);
+      // Error creating comment
     } finally {
       setIsUploading(false);
     }
@@ -136,7 +136,7 @@ export default function CommentSection({ taskId, comments }: CommentSectionProps
       try {
         await deleteComment.mutateAsync({ id: commentId });
       } catch (error) {
-        console.error('Error deleting comment:', error);
+        // Error deleting comment
       }
     }
   };

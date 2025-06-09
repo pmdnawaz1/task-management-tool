@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { useSession } from 'next-auth/react';
 import { authOptions } from '~/server/auth';
 import { api } from '~/utils/api';
-import { Plus, UserPlus, Search, Filter } from 'lucide-react';
+import { Plus, UserPlus, Search, Filter, LayoutGrid } from 'lucide-react';
 import TaskForm from '~/components/TaskForm';
 import TaskDetails from '~/components/TaskDetails';
 import TaskCard from '~/components/TaskCard';
@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const { data: tasks, refetch: refetchTasks } = api.tasks.getAll.useQuery();
   const { data: users } = api.users.getAll.useQuery();
@@ -179,8 +180,16 @@ export default function Dashboard() {
 
         {/* Tasks List */}
         <div className="rounded-lg shadow-sm" style={{ backgroundColor: theme.bg.secondary }}>
-          <div className="px-6 py-4 border-b" style={{ border: `1px solid ${theme.border}` }}>
+          <div className="px-6 py-4 border-b flex justify-between items-center" style={{ border: `1px solid ${theme.border}` }}>
             <h2 className="text-lg font-semibold" style={{ color: theme.text.primary }}>Tasks</h2>
+            <button
+              onClick={() => window.location.href = '/board'}
+              className="flex items-center px-4 py-2 rounded-md hover:opacity-90"
+              style={{ backgroundColor: theme.accent.secondary, color: theme.text.onAccent }}
+            >
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              View Board
+            </button>
           </div>
           <div className="p-6">
             {filteredTasks && filteredTasks.length > 0 ? (
@@ -190,6 +199,7 @@ export default function Dashboard() {
                     key={task.id}
                     task={task}
                     onClick={() => setShowTaskDetails(task.id)}
+                    onEdit={() => setEditingTaskId(task.id)}
                   />
                 ))}
               </div>
@@ -205,8 +215,11 @@ export default function Dashboard() {
       {/* Modals */}
       {showTaskForm && (
         <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: theme.modalBackdrop }}>
-          <div className="rounded-lg p-6 w-full max-w-2xl" style={{ backgroundColor: theme.bg.secondary }}>
-            <div className="flex justify-between items-center mb-4">
+          <div className="rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: theme.bg.secondary }}>
+            <div className="sticky top-0 flex justify-between items-center p-6 pb-4 border-b" style={{ 
+              backgroundColor: theme.bg.secondary,
+              borderColor: theme.border 
+            }}>
               <h2 className="text-xl font-semibold" style={{ color: theme.text.primary }}>Create New Task</h2>
               <button
                 onClick={() => setShowTaskForm(false)}
@@ -216,10 +229,12 @@ export default function Dashboard() {
                 ×
               </button>
             </div>
-            <TaskForm onSuccess={() => {
-              setShowTaskForm(false);
-              void refetchTasks();
-            }} />
+            <div className="p-6">
+              <TaskForm onSuccess={() => {
+                setShowTaskForm(false);
+                void refetchTasks();
+              }} />
+            </div>
           </div>
         </div>
       )}
@@ -232,6 +247,48 @@ export default function Dashboard() {
             void refetchTasks();
           }}
         />
+      )}
+
+      {editingTaskId && (
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: theme.modalBackdrop }}>
+          <div className="rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: theme.bg.secondary }}>
+            <div className="sticky top-0 flex justify-between items-center p-6 pb-4 border-b" style={{ 
+              backgroundColor: theme.bg.secondary,
+              borderColor: theme.border 
+            }}>
+              <h2 className="text-xl font-semibold" style={{ color: theme.text.primary }}>Edit Task</h2>
+              <button
+                onClick={() => setEditingTaskId(null)}
+                style={{ color: theme.text.secondary }}
+                className="hover:opacity-80 hover:cursor-pointer text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <TaskForm 
+                taskId={editingTaskId}
+                initialData={(() => {
+                  const task = tasks?.find(t => t.id === editingTaskId);
+                  if (!task) return undefined;
+                  return {
+                    title: task.title,
+                    description: task.description ?? '',
+                    deadline: task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
+                    priority: task.priority,
+                    assignedToId: task.assignedToId,
+                    tags: task.tags?.join(', ') ?? '',
+                    dod: task.dod ?? '',
+                  };
+                })()}
+                onSuccess={() => {
+                  setEditingTaskId(null);
+                  void refetchTasks();
+                }} 
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {showInviteForm && (

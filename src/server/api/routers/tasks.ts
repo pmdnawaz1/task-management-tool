@@ -9,6 +9,8 @@ const taskSchema = z.object({
   deadline: z.date().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   assignedToId: z.string(),
+  tags: z.array(z.string()).optional(),
+  dod: z.string().optional(),
   attachments: z.array(z.object({
     fileName: z.string(),
     fileUrl: z.string(),
@@ -123,15 +125,70 @@ export const tasksRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { id, ...updateData } = input;
       
-      return ctx.db.task.update({
+      // First check if task exists and get current data
+      const task = await ctx.db.task.findUnique({
+        where: { id },
+        include: {
+          assignedTo: true,
+          createdBy: true,
+        },
+      });
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        });
+      }
+
+      // Check if user has permission to update task
+      const isAdmin = ctx.session.user.role === 'ADMIN';
+      const isCreator = task.createdById === ctx.session.user.id;
+
+      if (!isAdmin && !isCreator) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins and task creators can update tasks',
+        });
+      }
+      
+      const updatedTask = await ctx.db.task.update({
         where: { id },
         data: updateData,
         include: {
-          assignedTo: {
-            select: { id: true, name: true, email: true }
-          }
+          assignedTo: true,
+          createdBy: true,
+          attachments: true,
+          comments: {
+            include: {
+              author: true,
+              attachments: true,
+            },
+          },
         }
       });
+
+      // Send email notification if assignee was changed
+      if (updateData.assignedToId && updateData.assignedToId !== task.assignedToId) {
+        try {
+          await sendEmail({
+            to: updatedTask.assignedTo.email,
+            subject: `Task Reassigned: ${updatedTask.title}`,
+            text: `You have been assigned to task "${updatedTask.title}" by ${ctx.session.user.name}.`,
+            html: `
+              <h2>Task Reassigned</h2>
+              <p>You have been assigned to task "<strong>${updatedTask.title}</strong>" by <strong>${ctx.session.user.name}</strong>.</p>
+              <p><strong>Description:</strong> ${updatedTask.description ?? 'No description'}</p>
+              <p><strong>Priority:</strong> ${updatedTask.priority}</p>
+              <p><strong>Deadline:</strong> ${updatedTask.deadline ? new Date(updatedTask.deadline).toLocaleDateString() : 'No deadline'}</p>
+            `
+          });
+        } catch (emailError) {
+          console.error('Failed to send assignment email:', emailError);
+        }
+      }
+
+      return updatedTask;
     }),
 
   delete: protectedProcedure
@@ -202,14 +259,10 @@ export const tasksRouter = createTRPCRouter({
       mentions: z.array(z.string()),
     }))
     .mutation(async ({ ctx, input }) => {
-      console.log('Session user:', ctx.session.user);
-
       // First verify the author exists
       const author = await ctx.db.user.findUnique({
         where: { id: ctx.session.user.id },
       });
-
-      console.log('Found author:', author);
 
       if (!author) {
         throw new TRPCError({
@@ -275,9 +328,7 @@ export const tasksRouter = createTRPCRouter({
                 subject: `You were mentioned in a task comment`,
                 text: `${author.name} mentioned you in a comment on task "${task.title}":\n\n${input.content}`,
               });
-              console.log(`Email sent to mentioned user: ${user.email}`);
             } catch (emailError) {
-              console.error(`Failed to send email to mentioned user ${user.email}:`, emailError);
               // Continue with other emails even if one fails
             }
           }
@@ -295,14 +346,11 @@ export const tasksRouter = createTRPCRouter({
               subject: `New comment on task: ${task.title}`,
               text: `${author.name} commented on task "${task.title}":\n\n${input.content}`,
             });
-            console.log(`Email sent to task user: ${user.email}`);
           } catch (emailError) {
-            console.error(`Failed to send email to task user ${user.email}:`, emailError);
             // Continue with other emails even if one fails
           }
         }
       } catch (error) {
-        console.error('Error sending email notifications:', error);
         // Don't throw the error - we still want to return the comment
       }
 

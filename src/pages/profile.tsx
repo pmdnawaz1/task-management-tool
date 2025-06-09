@@ -44,8 +44,6 @@ export default function ProfilePage() {
 
   const updateProfile = api.auth.updateProfile.useMutation({
     onSuccess: async (data) => {
-      console.log('Profile update successful, data:', data);
-      
       // Update local state with the returned data
       if (data.user) {
         setName(data.user.name ?? '');
@@ -102,7 +100,6 @@ export default function ProfilePage() {
         const result = await response.json() as { url: string };
         setImage(result.url);
       } catch (error) {
-        console.error('Upload error:', error);
         setError('Failed to upload image');
         setPreviewUrl(null);
       }

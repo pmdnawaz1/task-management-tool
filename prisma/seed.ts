@@ -4,13 +4,8 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
-
   try {
     // Create users in our database (skip Supabase for now)
-    console.log('Creating users in database...');
-    
-    // Check if admin already exists
     const existingAdmin = await prisma.user.findUnique({
       where: { email: 'pmdnawaz1@gmail.com' }
     });
@@ -26,10 +21,8 @@ async function main() {
           role: 'ADMIN',
         },
       });
-      console.log('✅ Created admin user');
     } else {
       admin = existingAdmin;
-      console.log('✅ Admin user already exists');
     }
 
     // Check if user already exists
@@ -49,18 +42,13 @@ async function main() {
           invitedById: admin.id,
         },
       });
-      console.log('✅ Created normal user');
     } else {
       user = existingUser;
-      console.log('✅ Normal user already exists');
     }
 
     // Create sample tasks
-    console.log('Creating sample tasks...');
-    
     const existingTasks = await prisma.task.findMany();
     if (existingTasks.length === 0) {
-      // Create first task
       await prisma.task.create({
         data: {
           title: 'Setup Project Structure',
@@ -69,10 +57,11 @@ async function main() {
           status: 'DONE',
           assignedToId: admin.id,
           createdById: admin.id,
+          tags: ['setup', 'initialization'],
+          dod: 'Project structure is complete with all dependencies installed',
         },
       });
 
-      // Create second task
       await prisma.task.create({
         data: {
           title: 'Implement Authentication',
@@ -82,10 +71,11 @@ async function main() {
           assignedToId: user.id,
           createdById: admin.id,
           deadline: new Date('2025-06-15'),
+          tags: ['auth', 'security'],
+          dod: 'Users can login and logout securely',
         },
       });
 
-      // Create third task
       await prisma.task.create({
         data: {
           title: 'Create Task Management UI',
@@ -95,38 +85,18 @@ async function main() {
           assignedToId: user.id,
           createdById: admin.id,
           deadline: new Date('2025-06-20'),
+          tags: ['frontend', 'ui'],
+          dod: 'Users can create, edit, and manage tasks through the interface',
         },
       });
-
-      console.log('✅ Created sample tasks');
-    } else {
-      console.log('✅ Sample tasks already exist');
     }
-
-    console.log('');
-    console.log('✅ Database seeded successfully!');
-    console.log('');
-    console.log('🔍 Database contents:');
-    
-    const allUsers = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, role: true }
-    });
-    console.table(allUsers);
-    
-    const allTasks = await prisma.task.findMany({
-      select: { id: true, title: true, status: true, assignedToId: true }
-    });
-    console.table(allTasks);
-    
   } catch (error) {
-    console.error('❌ Seeding error:', error);
     throw error;
   }
 }
 
 main()
   .catch((e) => {
-    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

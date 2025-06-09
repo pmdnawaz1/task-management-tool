@@ -87,6 +87,8 @@ model Task {
   status      TaskStatus  @default(OPEN)
   priority    Priority    @default(MEDIUM)
   deadline    DateTime?
+  tags        String[]    @default([])
+  dod         String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   assignedTo  User        @relation("AssignedTasks", fields: [assignedToId], references: [id])

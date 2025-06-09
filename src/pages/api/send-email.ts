@@ -26,14 +26,6 @@ export default async function handler(
       text: string;
       html?: string;
     };
-    console.log('Sending email to:', to);
-    console.log('SMTP Config:', {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE,
-      user: process.env.SMTP_USER,
-      from: process.env.SMTP_FROM_EMAIL,
-    });
 
     const mailOptions = {
       from: process.env.SMTP_FROM_EMAIL,
@@ -44,11 +36,9 @@ export default async function handler(
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
     
     return res.status(200).json({ success: true, messageId: info.messageId });
   } catch (error) {
-    console.error('Error sending email:', error);
     return res.status(500).json({ 
       error: 'Failed to send email',
       details: error instanceof Error ? error.message : 'Unknown error'

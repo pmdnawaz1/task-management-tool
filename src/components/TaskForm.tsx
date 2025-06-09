@@ -116,7 +116,7 @@ export default function TaskForm({ onSuccess, initialData, taskId }: TaskFormPro
       setAttachments([]);
       onSuccess?.();
     } catch (error) {
-      console.error('Error saving task:', error);
+      // Error saving task
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
@@ -124,7 +124,7 @@ export default function TaskForm({ onSuccess, initialData, taskId }: TaskFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6 rounded-lg shadow-md" style={{ backgroundColor: theme.bg.secondary, border: `1px solid ${theme.border}` }}>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <label htmlFor="title" className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
           Title *

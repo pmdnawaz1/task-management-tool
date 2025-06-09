@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { api } from '~/utils/api';
-import { X, Send, AtSign, Paperclip } from 'lucide-react';
+import { X, Send, AtSign, Paperclip, Edit3 } from 'lucide-react';
 import { sendEmail } from '~/utils/email';
 import { useTheme } from '~/contexts/ThemeContext';
+import TaskForm from './TaskForm';
 
 interface TaskDetailsProps {
   taskId: string;
@@ -22,6 +23,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   const { data: task } = api.tasks.getById.useQuery({ id: taskId });
   const { data: users } = api.users.getAll.useQuery();
@@ -53,6 +55,26 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
   if (!task) return null;
 
   const canChangeStatus = session?.user?.role === 'ADMIN' || task.assignedTo?.id === session?.user?.id;
+  const canEditTask = session?.user?.role === 'ADMIN' || task.createdBy?.id === session?.user?.id;
+
+  const getStatusColor = (status: 'OPEN' | 'IN_PROGRESS' | 'REVIEW' | 'DONE') => {
+    switch (status) {
+      case 'OPEN': return theme.status.open;
+      case 'IN_PROGRESS': return theme.status.inProgress;
+      case 'REVIEW': return theme.status.review;
+      case 'DONE': return theme.status.done;
+      default: return theme.text.secondary;
+    }
+  };
+
+  const getPriorityColor = (priority: 'LOW' | 'MEDIUM' | 'HIGH') => {
+    switch (priority) {
+      case 'HIGH': return theme.priority.high;
+      case 'MEDIUM': return theme.priority.medium;
+      case 'LOW': return theme.priority.low;
+      default: return theme.text.secondary;
+    }
+  };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     if (!canChangeStatus) return;
@@ -146,7 +168,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
         attachments: uploadedAttachments,
       });
     } catch (error) {
-      console.error('Error uploading attachments:', error);
+      // Error uploading attachments
     } finally {
       setIsUploading(false);
     }
@@ -193,17 +215,30 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
     <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: theme.modalBackdrop }}>
       <div className="rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: theme.bg.secondary }}>
         <div className="flex justify-between items-start mb-6">
-          <div>
+          <div className="flex-1">
             <h2 className="text-2xl font-bold" style={{ color: theme.text.primary }}>{task.title}</h2>
             <p style={{ color: theme.text.secondary }} className="mt-2">{task.description}</p>
           </div>
-          <button
-            onClick={onClose}
-            style={{ color: theme.text.secondary }}
-            className="hover:opacity-80"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center space-x-2">
+            {canEditTask && (
+              <button
+                onClick={() => setShowEditForm(true)}
+                className="flex items-center px-3 py-2 rounded-lg hover:opacity-80"
+                style={{ backgroundColor: theme.accent.secondary, color: theme.text.onAccent }}
+                title="Edit Task"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              style={{ color: theme.text.secondary }}
+              className="hover:opacity-80"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -218,10 +253,8 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: theme.text.secondary }}>Priority</h3>
             <span className="px-2 py-1 rounded-full text-xs font-medium" style={{ 
-              backgroundColor: task.priority === 'HIGH' ? theme.accent.primary :
-              task.priority === 'MEDIUM' ? theme.accent.secondary :
-              theme.bg.quaternary,
-              color: theme.text.primary
+              backgroundColor: getPriorityColor(task.priority),
+              color: theme.text.onAccent
             }}>
               {task.priority}
             </span>
@@ -240,10 +273,10 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
                   <button
                     onClick={() => handleStatusChange(status)}
                     disabled={!canChangeStatus}
-                    className="px-3 py-1 rounded-full text-xs font-medium hover:opacity-90"
+                    className="px-2 py-1 rounded-full text-xs font-medium hover:opacity-90"
                     style={{ 
-                      backgroundColor: task.status === status ? theme.accent.primary : theme.bg.tertiary,
-                      color: theme.text.primary,
+                      backgroundColor: task.status === status ? getStatusColor(status) : theme.bg.tertiary,
+                      color: task.status === status ? theme.text.onAccent : theme.text.primary,
                       opacity: !canChangeStatus ? 0.5 : 1,
                       cursor: !canChangeStatus ? 'not-allowed' : 'pointer'
                     }}
@@ -251,7 +284,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
                     {status.replace('_', ' ')}
                   </button>
                   {!canChangeStatus && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10" style={{ 
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10" style={{ 
                       backgroundColor: theme.bg.primary,
                       color: theme.text.primary,
                       border: `1px solid ${theme.border}`
@@ -268,7 +301,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
         <div className="border-t pt-6" style={{ border: `1px solid ${theme.border}` }}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium" style={{ color: theme.text.primary }}>Task Attachments</h3>
-            <label className="flex items-center px-3 py-1 rounded-md cursor-pointer hover:opacity-90" style={{ backgroundColor: theme.accent.primary, color: theme.text.onAccent }}>
+            <label className="flex items-center px-4 py-2 rounded-md cursor-pointer hover:opacity-90" style={{ backgroundColor: theme.accent.primary, color: theme.text.onAccent }}>
               <Paperclip className="w-4 h-4 mr-2" />
               Add Files
               <input
@@ -288,7 +321,7 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
               </p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center space-x-2 px-3 py-1 rounded" style={{ backgroundColor: theme.bg.quaternary }}>
+                  <div key={index} className="flex items-center space-x-2 px-2 py-1 rounded" style={{ backgroundColor: theme.bg.quaternary }}>
                     <span className="text-sm" style={{ color: theme.text.primary }}>
                       {file.name} ({Math.round(file.size / 1024)}KB)
                     </span>
@@ -453,6 +486,46 @@ export default function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
           </form>
         </div>
       </div>
+      
+      {/* Edit Task Modal */}
+      {showEditForm && (
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: theme.modalBackdrop }}>
+          <div className="rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: theme.bg.secondary }}>
+            <div className="sticky top-0 flex justify-between items-center p-6 pb-4 border-b" style={{ 
+              backgroundColor: theme.bg.secondary,
+              borderColor: theme.border 
+            }}>
+              <h3 className="text-xl font-semibold" style={{ color: theme.text.primary }}>Edit Task</h3>
+              <button
+                onClick={() => setShowEditForm(false)}
+                style={{ color: theme.text.secondary }}
+                className="hover:opacity-80"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <TaskForm 
+                taskId={taskId}
+                initialData={{
+                  title: task.title,
+                  description: task.description ?? '',
+                  deadline: task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
+                  priority: task.priority,
+                  assignedToId: task.assignedTo.id,
+                  tags: task.tags?.join(', ') ?? '',
+                  dod: task.dod ?? '',
+                }}
+                onSuccess={() => {
+                  setShowEditForm(false);
+                  void utils.tasks.getById.invalidate({ id: taskId });
+                  void utils.tasks.getAll.invalidate();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

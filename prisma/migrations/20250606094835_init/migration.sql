@@ -7,6 +7,9 @@ CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
 -- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'REVIEW', 'DONE');
 
+-- CreateEnum
+CREATE TYPE "OTPType" AS ENUM ('PROFILE_UPDATE', 'PASSWORD_RESET', 'EMAIL_VERIFICATION');
+
 -- CreateTable
 CREATE TABLE "Account" (
     "id" TEXT NOT NULL,
@@ -47,6 +50,8 @@ CREATE TABLE "User" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "invitedById" TEXT,
     "password" TEXT,
+    "resetToken" TEXT,
+    "resetTokenExpiry" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -109,6 +114,19 @@ CREATE TABLE "VerificationToken" (
     "expires" TIMESTAMP(3) NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "OTP" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "otp" TEXT NOT NULL,
+    "type" "OTPType" NOT NULL,
+    "isUsed" BOOLEAN NOT NULL DEFAULT false,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OTP_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
 
@@ -119,10 +137,28 @@ CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "User_resetToken_key" ON "User"("resetToken");
+
+-- CreateIndex
+CREATE INDEX "User_resetToken_idx" ON "User"("resetToken");
+
+-- CreateIndex
+CREATE INDEX "User_resetTokenExpiry_idx" ON "User"("resetTokenExpiry");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+
+-- CreateIndex
+CREATE INDEX "OTP_userId_idx" ON "OTP"("userId");
+
+-- CreateIndex
+CREATE INDEX "OTP_otp_idx" ON "OTP"("otp");
+
+-- CreateIndex
+CREATE INDEX "OTP_expiresAt_idx" ON "OTP"("expiresAt");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -153,3 +189,6 @@ ALTER TABLE "Mention" ADD CONSTRAINT "Mention_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OTP" ADD CONSTRAINT "OTP_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

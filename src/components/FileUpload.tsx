@@ -20,7 +20,6 @@ export default function FileUpload({ taskId, attachments, onUploadSuccess }: Fil
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    
     for (const file of acceptedFiles) {
       const formData = new FormData();
       formData.append('file', file);
@@ -44,7 +43,6 @@ export default function FileUpload({ taskId, attachments, onUploadSuccess }: Fil
         
         onUploadSuccess?.();
       } catch (error) {
-        console.error('Upload error:', error);
         setUploadProgress(prev => {
           const newProgress = { ...prev };
           delete newProgress[file.name];

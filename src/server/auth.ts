@@ -56,47 +56,28 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        console.log('🔐 Attempting authentication with credentials:', {
-          email: credentials?.email,
-          hasPassword: !!credentials?.password
-        });
-
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Missing email or password');
           return null;
         }
 
         try {
-          console.log('🔍 Looking up user in database...');
           const user = await db.user.findUnique({
             where: { email: credentials.email }
           });
 
-          console.log('👤 User found:', {
-            found: !!user,
-            hasPassword: !!user?.password,
-            email: user?.email
-          });
-
           if (!user || !user.password) {
-            console.log('❌ User not found or no password');
             return null;
           }
 
-          console.log('🔑 Comparing passwords with bcrypt...');
           const isPasswordValid = await bcrypt.compare(
             credentials.password,
             user.password
           );
 
-          console.log('✅ Password validation result:', isPasswordValid);
-
           if (!isPasswordValid) {
-            console.log('❌ Password invalid');
             return null;
           }
 
-          console.log('🎉 Authentication successful for user:', user.email);
           return {
             id: user.id,
             email: user.email,
@@ -105,7 +86,6 @@ export const authOptions: NextAuthOptions = {
             image: user.image,
           };
         } catch (error) {
-          console.error('❌ Auth error:', error);
           return null;
         }
       },

@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
-import { Calendar, User, Tag, MessageCircle, Paperclip, Clock } from 'lucide-react';
+import { Calendar, User, Tag, MessageCircle, Paperclip, Clock, Edit3 } from 'lucide-react';
 import { useTheme } from '~/contexts/ThemeContext';
+import { useSession } from 'next-auth/react';
 
 interface TaskCardTask {
   id: string;
@@ -50,12 +51,15 @@ interface TaskCardTask {
 interface TaskCardProps {
   task: TaskCardTask;
   onClick?: () => void;
+  onEdit?: () => void;
 }
 
 
-export default function TaskCard({ task, onClick }: TaskCardProps) {
+export default function TaskCard({ task, onClick, onEdit }: TaskCardProps) {
   const { theme } = useTheme();
+  const { data: session } = useSession();
   const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'DONE';
+  const canEditTask = session?.user?.role === 'ADMIN' || task.createdBy?.id === session?.user?.id;
   
   const getPriorityColor = (priority: 'LOW' | 'MEDIUM' | 'HIGH') => {
     switch (priority) {
@@ -87,28 +91,43 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
       }}
     >
       <div className="flex justify-between items-start mb-3">
-        <h3 className="text-lg font-semibold line-clamp-2" style={{ color: theme.text.primary }}>
+        <h3 className="text-lg font-semibold line-clamp-2 flex-1" style={{ color: theme.text.primary }}>
           {task.title}
         </h3>
-        <div className="flex space-x-2">
-          <span 
-            className="px-2 py-1 rounded-full text-xs font-medium"
-            style={{ 
-              backgroundColor: getPriorityColor(task.priority),
-              color: theme.text.onAccent
-            }}
-          >
-            {task.priority}
-          </span>
-          <span 
-            className="px-2 py-1 rounded-full text-xs font-medium"
-            style={{ 
-              backgroundColor: getStatusColor(task.status),
-              color: theme.text.onAccent
-            }}
-          >
-            {task.status.replace('_', ' ')}
-          </span>
+        <div className="flex items-center space-x-2 ml-2">
+          {canEditTask && onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-1 rounded hover:opacity-80"
+              style={{ backgroundColor: theme.bg.tertiary, color: theme.text.secondary }}
+              title="Edit Task"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+          )}
+          <div className="flex space-x-1">
+            <span 
+              className="px-2 py-1 rounded-full text-xs font-medium"
+              style={{ 
+                backgroundColor: getPriorityColor(task.priority),
+                color: theme.text.onAccent
+              }}
+            >
+              {task.priority}
+            </span>
+            <span 
+              className="px-2 py-1 rounded-full text-xs font-medium"
+              style={{ 
+                backgroundColor: getStatusColor(task.status),
+                color: theme.text.onAccent
+              }}
+            >
+              {task.status.replace('_', ' ')}
+            </span>
+          </div>
         </div>
       </div>
 

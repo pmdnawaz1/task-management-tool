@@ -43,48 +43,29 @@ export const authConfig = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        console.log('🔐 Attempting authentication with credentials:', {
-          email: credentials?.email,
-          hasPassword: !!credentials?.password
-        });
-
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Missing email or password');
           return null;
         }
 
-        console.log('🔍 Looking up user in database...');
         const user = await db.user.findUnique({
           where: {
             email: credentials.email
           }
         });
 
-        console.log('👤 User found:', {
-          found: !!user,
-          hasPassword: !!user?.password,
-          email: user?.email
-        });
-
         if (!user || !user.password) {
-          console.log('❌ User not found or no password');
           return null;
         }
 
-        console.log('🔑 Comparing passwords...');
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
-        console.log('✅ Password validation result:', isPasswordValid);
-
         if (!isPasswordValid) {
-          console.log('❌ Password invalid');
           return null;
         }
 
-        console.log('🎉 Authentication successful for user:', user.email);
         return {
           id: user.id,
           email: user.email,
@@ -110,7 +91,6 @@ export const authConfig = {
       return token;
     },
     async session({ session, token }: { session: DefaultSession; token: JWT }) {
-      console.log('Session callback called for user:', token.id);
       if (token.id) {
         // Fetch fresh user data from database
         const dbUser = await db.user.findUnique({
@@ -122,12 +102,6 @@ export const authConfig = {
             image: true,
             role: true,
           },
-        });
-        
-        console.log('Fresh user data from DB:', { 
-          found: !!dbUser,
-          name: dbUser?.name, 
-          image: dbUser?.image 
         });
         
         if (dbUser) {
@@ -142,15 +116,10 @@ export const authConfig = {
               role: dbUser.role,
             },
           };
-          console.log('Returning updated session:', { 
-            name: updatedSession.user.name, 
-            image: updatedSession.user.image 
-          });
           return updatedSession;
         }
       }
       
-      console.log('Returning original session');
       return session;
     },
   },

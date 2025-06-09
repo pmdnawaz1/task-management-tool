@@ -4,9 +4,11 @@ import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
 import type { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '~/server/auth';
+import { useTheme } from '~/contexts/ThemeContext';
 
 const signinSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,7 +20,9 @@ type SigninFormData = z.infer<typeof signinSchema>;
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { theme } = useTheme();
 
   const {
     register,
@@ -52,80 +56,145 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: theme.bg.primary }}>
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+        {/* Header */}
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: theme.accent.primary }}>
+            <LogIn className="w-8 h-8" style={{ color: theme.text.onAccent }} />
+          </div>
+          <h2 className="text-3xl font-bold" style={{ color: theme.text.primary }}>
+            Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Task Management Tool
+          <p className="mt-2 text-sm" style={{ color: theme.text.secondary }}>
+            Sign in to your Task Management account
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+
+        {/* Form */}
+        <div className="rounded-lg shadow-lg p-8" style={{ backgroundColor: theme.bg.secondary }}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            {error && (
+              <div className="rounded-lg p-4" style={{ 
+                backgroundColor: `${theme.accent.error}15`,
+                border: `1px solid ${theme.accent.error}`,
+                color: theme.accent.error
+              }}>
+                {error}
+              </div>
+            )}
+            
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
+                Email address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5" style={{ color: theme.text.secondary }} />
+                </div>
+                <input
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  className="block w-full pl-10 pr-3 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: theme.bg.tertiary,
+                    color: theme.text.primary,
+                    border: `1px solid ${theme.border}`,
+                    '--tw-ring-color': theme.accent.primary,
+                  } as React.CSSProperties}
+                  placeholder="Enter your email"
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-1 text-sm" style={{ color: theme.accent.error }}>{errors.email.message}</p>
+              )}
             </div>
-          )}
-          
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <input
-              {...register('email')}
-              type="email"
-              autoComplete="email"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your email"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              {...register('password')}
-              type="password"
-              autoComplete="current-password"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your password"
-            />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-            )}
-          </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5" style={{ color: theme.text.secondary }} />
+                </div>
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  className="block w-full pl-10 pr-10 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: theme.bg.tertiary,
+                    color: theme.text.primary,
+                    border: `1px solid ${theme.border}`,
+                    '--tw-ring-color': theme.accent.primary,
+                  } as React.CSSProperties}
+                  placeholder="Enter your password"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="hover:opacity-80"
+                    style={{ color: theme.text.secondary }}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm" style={{ color: theme.accent.error }}>{errors.password.message}</p>
+              )}
+            </div>
 
-          <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full flex justify-center items-center py-3 px-4 rounded-lg font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{
+                backgroundColor: theme.accent.primary,
+                color: theme.text.onAccent,
+              }}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 mr-2" style={{ borderColor: theme.text.onAccent }}></div>
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign in
+                </>
+              )}
             </button>
-          </div>
+          </form>
 
-          <div className="mt-6">
+          {/* Demo Accounts */}
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t" style={{ borderColor: theme.border }} />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Demo Accounts</span>
+                <span className="px-3" style={{ backgroundColor: theme.bg.secondary, color: theme.text.secondary }}>
+                  Demo Accounts
+                </span>
               </div>
             </div>
-            <div className="mt-3 text-center text-sm text-gray-600 space-y-1">
-              <p><strong>Admin:</strong> pmdnawaz1@gmail.com / Qwert1@</p>
-              <p><strong>User:</strong> pmdnawaz123@gmail.com / Asdfg1@</p>
+            <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: theme.bg.tertiary }}>
+              <div className="text-center text-sm space-y-2" style={{ color: theme.text.secondary }}>
+                <p>
+                  <span className="font-medium" style={{ color: theme.text.primary }}>Admin:</span> pmdnawaz1@gmail.com / Qwert1@
+                </p>
+                <p>
+                  <span className="font-medium" style={{ color: theme.text.primary }}>User:</span> pmdnawaz123@gmail.com / Asdfg1@
+                </p>
+              </div>
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -48,7 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
       return res.status(500).json({ error: error.message });
     }
 
@@ -67,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       mimeType: file.mimetype ?? 'application/octet-stream',
     });
   } catch (error) {
-    console.error('Upload error:', error);
     return res.status(500).json({ error: 'Upload failed' });
   }
 }
