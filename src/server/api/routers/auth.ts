@@ -5,8 +5,74 @@ import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "~/utils/email";
 import { Prisma } from "@prisma/client";
+import { env } from "~/env";
 
 export const authRouter = createTRPCRouter({
+  signUpAdmin: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(6),
+      name: z.string().min(1),
+      adminKey: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        // Check admin key
+        const ADMIN_KEY = env.ADMIN_SIGNUP_KEY;
+        if (!ADMIN_KEY || input.adminKey !== ADMIN_KEY) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Invalid admin key",
+          });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(input.password, 10);
+
+        // Create user in Supabase Auth first
+        const { data, error } = await supabase.auth.signUp({
+          email: input.email,
+          password: input.password,
+        });
+
+        if (error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: error.message,
+          });
+        }
+
+        // Create admin user in our database
+        const user = await ctx.db.user.create({
+          data: {
+            email: input.email,
+            name: input.name,
+            password: hashedPassword,
+            role: "ADMIN",
+            image: `https://ui-avatars.com/api/?name=${encodeURIComponent(input.name)}&background=random`,
+          },
+        });
+
+        return { user, supabaseUser: data.user };
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2002') {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "A user with this email already exists",
+            });
+          }
+        }
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create admin user",
+        });
+      }
+    }),
+
   signUp: publicProcedure
     .input(z.object({
       email: z.string().email(),
