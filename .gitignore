@@ -50,3 +50,5 @@ yarn-error.log*
 *zip
 .open-next
 .sst
+
+*backup
