@@ -1,0 +1,378 @@
+{
+  "info": {
+    "name": "Task Management API",
+    "description": "API endpoints for the Task Management Tool",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "SUPABASE_URL",
+      "value": "{{NEXT_PUBLIC_SUPABASE_URL}}",
+      "type": "string"
+    },
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "value": "{{NEXT_PUBLIC_SUPABASE_ANON_KEY}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign Up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"New User\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/auth.signUp",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "auth.signUp"]
+            }
+          }
+        },
+        {
+          "name": "Invite User (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invited@example.com\",\n  \"name\": \"Invited User\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/auth.inviteUser",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "auth.inviteUser"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/tasks.getAll",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "tasks.getAll"]
+            }
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/tasks.getById?input={\"id\":\"{{task_id}}\"}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "tasks.getById"],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"id\":\"{{task_id}}\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Task\",\n  \"description\": \"This is a sample task description\",\n  \"priority\": \"HIGH\",\n  \"assignedToId\": \"{{user_id}}\",\n  \"tags\": [\"urgent\", \"backend\"],\n  \"deadline\": \"2025-06-15T10:00:00.000Z\",\n  \"dod\": \"Task is complete when all features are implemented and tested\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/tasks.create",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "tasks.create"]
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{task_id}}\",\n  \"status\": \"IN_PROGRESS\",\n  \"title\": \"Updated Task Title\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/tasks.update",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "tasks.update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{task_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/tasks.delete",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "tasks.delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is a comment with @username mention\",\n  \"taskId\": \"{{task_id}}\",\n  \"mentions\": [\"{{mentioned_user_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/comments.create",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "comments.create"]
+            }
+          }
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{comment_id}}\",\n  \"content\": \"Updated comment content\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/comments.update",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "comments.update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{comment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/comments.delete",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "comments.delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/users.getAll",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "users.getAll"]
+            }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/users.getProfile",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "users.getProfile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User Name\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/trpc/users.updateProfile",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "trpc", "users.updateProfile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "next-auth.session-token={{session_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "taskId",
+                  "value": "{{task_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/upload",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "upload"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

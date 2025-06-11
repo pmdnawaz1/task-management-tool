@@ -220,4 +220,10 @@ export default function SetPassword() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
 } 
