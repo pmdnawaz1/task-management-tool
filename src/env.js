@@ -14,6 +14,7 @@ export const env = createEnv({
     // AUTH_DISCORD_ID: z.string(),
     // AUTH_DISCORD_SECRET: z.string(),
     DATABASE_URL: z.string().url(),
+    DIRECT_URL: z.string().url().optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string(),
     ADMIN_SIGNUP_KEY: z.string().optional(),
     NODE_ENV: z
@@ -38,6 +39,7 @@ export const env = createEnv({
   runtimeEnv: {
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     ADMIN_SIGNUP_KEY: process.env.ADMIN_SIGNUP_KEY,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

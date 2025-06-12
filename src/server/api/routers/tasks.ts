@@ -90,12 +90,24 @@ export const tasksRouter = createTRPCRouter({
           ...taskData,
           createdById: ctx.session.user.id,
         },
+      });
+
+      // Fetch the complete task with relations
+      const taskWithRelations = await ctx.db.task.findUnique({
+        where: { id: task.id },
         include: {
           assignedTo: true,
           createdBy: true,
           attachments: true,
         },
       });
+
+      if (!taskWithRelations) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create task',
+        });
+      }
 
       // Create attachments if provided
       if (attachments && attachments.length > 0) {
@@ -110,16 +122,21 @@ export const tasksRouter = createTRPCRouter({
         });
       }
 
-      // Send email notification to assigned user
-      if (task.assignedTo.email) {
-        await sendEmail({
-          to: task.assignedTo.email,
-          subject: `New Task Assigned: ${task.title}`,
-          text: `You have been assigned a new task: ${task.title}\n\nDescription: ${task.description ?? 'No description'}\nPriority: ${task.priority}\nDeadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}`,
-        });
+      // Send email notification to assigned user (non-blocking)
+      if (taskWithRelations.assignedTo.email) {
+        try {
+          await sendEmail({
+            to: taskWithRelations.assignedTo.email,
+            subject: `New Task Assigned: ${taskWithRelations.title}`,
+            text: `You have been assigned a new task: ${taskWithRelations.title}\n\nDescription: ${taskWithRelations.description ?? 'No description'}\nPriority: ${taskWithRelations.priority}\nDeadline: ${taskWithRelations.deadline ? new Date(taskWithRelations.deadline).toLocaleDateString() : 'No deadline'}`,
+          });
+        } catch (emailError) {
+          console.error('Failed to send task assignment email:', emailError);
+          // Don't throw - continue with task creation
+        }
       }
 
-      return task;
+      return taskWithRelations;
     }),
 
   update: protectedProcedure
@@ -259,13 +276,18 @@ export const tasksRouter = createTRPCRouter({
         },
       });
 
-      // Send email notification to task creator
+      // Send email notification to task creator (non-blocking)
       if (task.createdById !== ctx.session.user.id && task.createdBy.email) {
-        await sendEmail({
-          to: task.createdBy.email,
-          subject: `Task Status Updated: ${task.title}`,
-          text: `The status of task "${task.title}" has been updated to ${input.status} by ${ctx.session.user.name}.`,
-        });
+        try {
+          await sendEmail({
+            to: task.createdBy.email,
+            subject: `Task Status Updated: ${task.title}`,
+            text: `The status of task "${task.title}" has been updated to ${input.status} by ${ctx.session.user.name}.`,
+          });
+        } catch (emailError) {
+          console.error('Failed to send status update email:', emailError);
+          // Don't throw - continue with status update
+        }
       }
 
       return updatedTask;
